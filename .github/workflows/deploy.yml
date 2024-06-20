@@ -1,0 +1,34 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - 'develop'
+
+permissions:
+  contents: 'read'
+  id-token: 'write'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: code checkout
+        uses: actions/checkout@v4
+
+      - name: install the gcloud cli
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+
+      - name: build and push the docker image
+        env:
+          GOOGLE_PROJECT: ${{ secrets.GOOGLE_PROJECT }}
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          INSTANCE_UNIX_SOCKET: ${{ secrets.INSTANCE_UNIX_SOCKET }}
+          CONNECTION_NAME: ${{ secrets.CONNECTION_NAME }}
+          VERSION: 2e2e244d16f6e117a963959035cf30094dcea0b60529de2e7c1ab5023a0e844a
+        run: |
+          gcloud run deploy api-produit-develop --image europe-west9-docker.pkg.dev/$GOOGLE_PROJECT/api-produit/image-api-produit@sha256:$VERSION --set-env-vars DATABASE_HOST=$DATABASE_HOST --set-env-vars DATABASE_USER=$DATABASE_USER --set-env-vars DATABASE_PASSWORD=$DATABASE_PASSWORD --set-env-vars INSTANCE_UNIX_SOCKET=$INSTANCE_UNIX_SOCKET --add-cloudsql-instances $CONNECTION_NAME --region europe-west9 --platform managed --allow-unauthenticated
